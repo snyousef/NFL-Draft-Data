@@ -1,16 +1,14 @@
-#Objective: Find associations in NFL draft data selections. Analysis done spearately by conference and by school. The rule data would be skewed if school and conference data was in same transaction dataset as a school is only a part of one conference.
+#Objective: Find associations in NFL draft data selections. Analysis done spearately by conference and by school. The rule data would be skewed if school and conference data was in same transaction dataset as any and all schools only belong to one collegiate conference.
 
 library(arules)
 library(tidyverse)
 
 ####Exploratory Data Analysis & ggplot2####
 #Uploaded using read.csv
-DraftListFull <- read.csv('C:/Users/Saad/Desktop/Additional R Work/DraftListFull.csv') #Loaded again but as table so that exploratory data analysis can be done
+DraftListFull <- read.csv('C:/Users/Saad/Desktop/Additional R Work/DraftListFull.csv', header = TRUE, na.strings = c("", "NA")) #na.strings puts an NA value in any cell that is blank
+DraftListFull <- DraftListFull[complete.cases(DraftListFull), ] #Removes rows with any number of NA's in it
 View(DraftListFull)
 str(DraftListFull)
-complete.cases(DraftListFull)
-sum(is.na(DraftListFull))
-DraftListFull <- DraftListFull[-c(385,468),]
 DraftListFull$Year.Drafted <- as.factor(DraftListFull$Year.Drafted)
 
 
@@ -29,46 +27,41 @@ ggplot(data = DraftListFull) + geom_bar(mapping = aes(x=DraftListFull$Position, 
 
 
 ####Transaction Data by School####
+#Again, I am not including school and conference in the same dataset since schools automatically belong to a conference and thus no significant rules can come out of associations between schools and conferences
+#Need to prepare data from cleaned dataset above in order to re-upload data as .txt into a transaction dataset
+DraftListPared <- DraftListFull[,-c(1,2,4,7,8)] #Remove columns 1,2,4,7 and 8 to prepare for school-based associations
+write.table(DraftListPared, 'C:/Users/Saad/Desktop/Additional R Work/DraftListSchool.txt', sep ="\t")
 DraftListSchool <- read.transactions('C:/Users/Saad/Desktop/Additional R Work/DraftListSchool.txt', sep ="\t")
 summary(DraftListSchool)
 DraftListSchool
 
-##Scratch work to determine appropriate support levels
-#32 NFL Teams, 207 Schools, 21 Player Positions = 260 unique values
-#DraftListSchool: Denisty=.01143243; 1276 (rows)*262(columns)*(.01143243) = 3822 cells with values
-#3822/(32+207+21) = 14.7; if each item was represented equally, each would show up 14.7 times
-#14.7/3822 = .003846155; any item with support higher than ~.003 shows up more often than the expected average
-
 itemFrequency(DraftListSchool[,1:10])
-itemFrequencyPlot(DraftListSchool, support = .10) #Returns items with support .10
+itemFrequencyPlot(DraftListSchool, support = .10) #Returns items with support .10 (suppport indicates the number of times an item shows up in a dataset relative to all the other items)
 itemFrequencyPlot(DraftListSchool, topN = 5) #Returns items with top support
 
-DraftRuleSchool <- apriori(DraftListSchool, parameter = list(support=0.004, confidence=.10, minlen=2))
-DraftRuleSchool      
+DraftRuleSchool <- apriori(DraftListSchool, parameter = list(support=0.005, confidence=.10, minlen=2))
+DraftRuleSchool
 summary(DraftRuleSchool)
-inspect(DraftRuleSchool[1:39])
+inspect(DraftRuleSchool)
 inspect(sort(DraftRuleSchool, by="lift"))
 
 
 
 ####Transaction Data by Conference####
+#Removing same columns as above but keeping conference in and removing school column 
+DraftListPared2 <- DraftListFull[,-c(1,2,4,6,8)] #Remove columns 1,2,4,6 and 8 to prepare for conference-based associations
+write.table(DraftListPared2, 'C:/Users/Saad/Desktop/Additional R Work/DraftListConference.txt', sep ="\t")
 DraftListConference <- read.transactions('C:/Users/Saad/Desktop/Additional R Work/DraftListConference.txt', sep ="\t")
 summary(DraftListConference)
 DraftListConference
-
-####Scratch work to determine appropriate support levels
-#32 NFL Teams, 43 Conferences, 21 Player Positions = 96 unique values
-#DraftListConference: Density= .03087128; 1276(rows)*97(columns)*(.03087128) = 3821
-#3821/(32+43+21) = 39.80208; if each item was represented equally, each would show up 39.80208 times
-#39.80208/3821 = .01041667; any item with support hifher than ~.01 shows up more often than the expected average
 
 itemFrequency(DraftListConference[,1:10])
 itemFrequencyPlot(DraftListConference, support = .10) #Returns items with support .10
 itemFrequencyPlot(DraftListConference, topN = 5) #Returns items with top support
 
-DraftRuleConference <- apriori(DraftListConference, parameter = list(support=0.011, confidence=.10, minlen=2))
-DraftRuleConference      
+DraftRuleConference <- apriori(DraftListConference, parameter = list(support=0.011, confidence=.15, minlen=2))
+DraftRuleConference
 summary(DraftRuleConference)
-inspect(DraftRuleConference[1:33])
+inspect(DraftRuleConference)
 inspect(sort(DraftRuleConference, by="lift"))
 

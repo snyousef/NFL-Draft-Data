@@ -1,4 +1,4 @@
-#Objective: Find associations in NFL draft data selections. Analysis done spearately by conference and by school. The rule data would be skewed if school and conference data was in same transaction dataset as any and all schools only belong to one collegiate conference.
+#Objective: Find associations in NFL draft data selections. Analysis done spearately by conference and by school. The rule data would be skewed if school and conference data was in same transaction dataset as schools only belong to one collegiate conference.
 
 library(arules)
 library(tidyverse)
